@@ -1,6 +1,13 @@
+# JPEG Duplicate Remover
 
 
-usage:
+## Installation
+
+...
+
+
+## USAGE
+
   jpegduperemover <backupdir> <duplicates>
 
   jpegduperemover will recursively search for jpg images in `backupdir` and
