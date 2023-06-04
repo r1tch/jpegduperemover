@@ -1,6 +1,8 @@
+/*
 fn type_of<T>(_: &T) -> &str {
     std::any::type_name::<T>()
 }
+*/
 
 
 use rexif;
@@ -11,15 +13,20 @@ use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
-static USAGE: &str = "Usage: jpegduperemover <backupdir> <dupedir>";
+static USAGE: &str = "Usage: jpegduperemover [-v] <backupdir> <dupedir>";
 
-fn parse_args() -> (String, String) {
+fn parse_args() -> (bool, String, String) {
     let mut args = env::args();
     args.next();
 
-    let backupdir = args.next().expect(USAGE);
+    let mut verbose = false;
+    let mut backupdir = args.next().expect(USAGE);
+    if backupdir == "-v" {
+        verbose = true;
+        backupdir = args.next().expect(USAGE);
+    }
     let dupedir = args.next().expect(USAGE);
-    (backupdir, dupedir)
+    (verbose, backupdir, dupedir)
 }
 
 #[derive(Debug)]
@@ -96,17 +103,22 @@ fn collect_images_recursively(dirname: &str) -> HashSet<JpegImage> {
 }
 
 fn main() {
-    let (backupdir, dupedir) = parse_args();
+    let (verbose, backupdir, dupedir) = parse_args();
 
-    println!("Collecting backed-up images...");
+    // println!("Collecting backed-up images...");
     let backup_images = collect_images_recursively(&backupdir);
-    println!("Collecting duplicate images...");
+    // println!("Collecting duplicate images...");
     let dupe_images = collect_images_recursively(&dupedir);
 
     for dupe_image in dupe_images {
-        if backup_images.contains(&dupe_image) {
-            if let Some(str_path) = dupe_image.fullpath.to_str() {
-                println!("rm \"{}\"", str_path);
+        if let Some(backup_image) = backup_images.get(&dupe_image) {
+            if let Some(dupe_str_path) = dupe_image.fullpath.to_str() {
+                if verbose {
+                    if let Some(backup_str_path) = backup_image.fullpath.to_str() {
+                        println!("# \"{}\" \"{}\" ", dupe_str_path, backup_str_path);
+                    }
+                }
+                println!("rm \"{}\"", dupe_str_path);
             }
         }
     }
